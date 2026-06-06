@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Grocery Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            display: grid;
+            gap: 2rem;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 350px 1fr;
+            }
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            outline: none;
+            background: var(--bg);
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--primary);
+        }
+
+        .budget-display {
+            font-weight: 600;
+            color: var(--primary);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        button.primary-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button.primary-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        button.primary-btn:active {
+            transform: scale(0.98);
+        }
+        
+        button.primary-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .output-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .grocery-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .grocery-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .item-details {
+            flex-grow: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .item-meta {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .item-cost {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        button.sub-btn {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            margin-left: 1rem;
+        }
+
+        button.sub-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .loader {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        .loader.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 3rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            opacity: 0.5;
+        }
+
+        .error-msg {
+            color: #ef4444;
+            background: #fef2f2;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #f87171;
+            font-size: 0.875rem;
+            display: none;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Input Form Side -->
+        <div class="card">
+            <h1>🍳 AI Grocery Planner</h1>
+            
+            <div id="errorBox" class="error-msg"></div>
+
+            <div class="form-group">
+                <label for="budget">Budget (Estimated $)</label>
+                <div class="range-container">
+                    <input type="range" id="budget" min="10" max="200" value="50" step="5">
+                    <span class="budget-display" id="budgetVal">$50</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="mealType">Meal Type</label>
+                <select id="mealType">
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch">Lunch</option>
+                    <option value="Dinner" selected>Dinner</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Full Day">Full Day Plan</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dietary">Dietary Preferences / Restrictions</label>
+                <input type="text" id="dietary" placeholder="e.g. Vegan, Gluten-free, Nut allergy">
+            </div>
+
+            <div class="form-group">
+                <label for="cuisine">Cuisine / Style (Optional)</label>
+                <input type="text" id="cuisine" placeholder="e.g. Italian, Mexican, Quick prep">
+            </div>
+
+            <button class="primary-btn" id="generateBtn">Generate List</button>
+        </div>
+
+        <!-- Output Side -->
+        <div class="output-section">
+            <div id="mainLoader" class="loader"></div>
+            
+            <div id="emptyState" class="empty-state">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                <p>Configure your preferences and hit "Generate List" to create your tailored grocery plan.</p>
+            </div>
+
+            <div id="groceryList"></div>
+            
+            <div class="card" id="summaryCard" style="display: none; margin-top: 1rem; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1.1rem;">
+                    <span>Total Estimated Cost:</span>
+                    <span id="totalCost" style="color: var(--primary)">$0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const budgetInput = document.getElementById('budget');
+        const budgetVal = document.getElementById('budgetVal');
+        const generateBtn = document.getElementById('generateBtn');
+        const errorBox = document.getElementById('errorBox');
+        const mainLoader = document.getElementById('mainLoader');
+        const emptyState = document.getElementById('emptyState');
+        const groceryListEl = document.getElementById('groceryList');
+        const summaryCard = document.getElementById('summaryCard');
+        const totalCostEl = document.getElementById('totalCost');
+
+        let currentList = [];
+
+        // Sync budget slider
+        budgetInput.addEventListener('input', (e) => {
+            budgetVal.textContent = `$${e.target.value}`;
+        });
+
+        // Main Generation Logic
+        generateBtn.addEventListener('click', async () => {
+            const budget = budgetInput.value;
+            const mealType = document.getElementById('mealType').value;
+            const dietary = document.getElementById('dietary').value.trim();
+            const cuisine = document.getElementById('cuisine').value.trim();
+
+            hideError();
+            setLoading(true);
+
+            const prompt = `You are a helpful culinary assistant. Generate a specific grocery list based on these parameters:
+- Target Budget: $${budget}
+- Meal Type: ${mealType}
+- Dietary Preferences/Restrictions: ${dietary || 'None'}
+- Cuisine/Style: ${cuisine || 'Any'}
+
+Output ONLY a JSON array of objects. Do not include markdown code blocks, backticks, or any conversational text. Just the raw JSON array.
+Each object must have these exactly named keys:
+1. "item" (string, the name of the ingredient)
+2. "estimatedCost" (number, estimated cost in dollars)
+3. "reason" (string, short reason why it's included)
+Example: [{"item": "Tofu", "estimatedCost": 3.5, "reason": "Protein source"}]`;
+
+            try {
+                const data = await callOpenAI(prompt);
+                currentList = JSON.parse(data);
+                renderList();
+            } catch (err) {
+                showError("Failed to generate list. Please check your API key and try again. Detailed error: " + err.message);
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Substitution Logic
+        async function substituteItem(index) {
+            const itemToReplace = currentList[index];
+            const budget = budgetInput.value;
+            const mealType = document.getElementById('mealType').value;
+            const dietary = document.getElementById('dietary').value.trim();
+            const cuisine = document.getElementById('cuisine').value.trim();
+
+            const itemEl = document.getElementById(`item-${index}`);
+            const btn = itemEl.querySelector('button');
+            const originalBtnText = btn.textContent;
+            btn.textContent = "Loading...";
+            btn.disabled = true;
+
+            const prompt = `I have a grocery item on my list: "${itemToReplace.item}" (estimated cost: $${itemToReplace.estimatedCost}).
+My parameters are: Budget $${budget}, Meal: ${mealType}, Dietary: ${dietary || 'None'}, Cuisine: ${cuisine || 'Any'}.
+Please suggest ONE direct substitute for this item.
+
+Output ONLY a JSON object. Do not include markdown code blocks, backticks, or any conversational text.
+The object must have these exactly named keys:
+1. "item" (string)
+2. "estimatedCost" (number)
+3. "reason" (string)
+Example: {"item": "Tempeh", "estimatedCost": 4.0, "reason": "Alternative vegan protein"}`;
+
+            try {
+                const data = await callOpenAI(prompt);
+                const newItem = JSON.parse(data);
+                currentList[index] = newItem;
+                renderList();
+            } catch (err) {
+                showError("Substitution failed: " + err.message);
+                btn.textContent = originalBtnText;
+                btn.disabled = false;
+            }
+        }
+
+        // Render List DOM
+        function renderList() {
+            emptyState.style.display = 'none';
+            groceryListEl.innerHTML = '';
+            
+            let total = 0;
+
+            if (currentList.length === 0) {
+                groceryListEl.innerHTML = '<p style="text-align:center; color:var(--text-muted);">No items generated. Try adjusting your parameters.</p>';
+                summaryCard.style.display = 'none';
+                return;
+            }
+
+            currentList.forEach((item, index) => {
+                total += parseFloat(item.estimatedCost) || 0;
+                
+                const div = document.createElement('div');
+                div.className = 'grocery-item';
+                div.id = `item-${index}`;
+                div.style.marginBottom = '1rem';
+                
+                div.innerHTML = `
+                    <div class="item-details">
+                        <div class="item-name">${escapeHTML(item.item)}</div>
+                        <div class="item-meta">
+                            <span class="item-cost">$${Number(item.estimatedCost).toFixed(2)}</span>
+                            <span>•</span>
+                            <span>${escapeHTML(item.reason)}</span>
+                        </div>
+                    </div>
+                    <button class="sub-btn" onclick="substituteItem(${index})">Substitute</button>
+                `;
+                groceryListEl.appendChild(div);
+            });
+
+            totalCostEl.textContent = `$${total.toFixed(2)}`;
+            summaryCard.style.display = 'block';
+        }
+
+        // API Helper
+        async function callOpenAI(prompt) {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(()=>({}));
+                throw new Error(errData.error || response.statusText);
+            }
+
+            const data = await response.json();
+            return data.content;
+        }
+
+        // Utils
+        function setLoading(isLoading) {
+            generateBtn.disabled = isLoading;
+            generateBtn.textContent = isLoading ? 'Generating...' : 'Generate List';
+            if (isLoading) {
+                mainLoader.classList.add('active');
+                emptyState.style.display = 'none';
+                groceryListEl.innerHTML = '';
+                summaryCard.style.display = 'none';
+            } else {
+                mainLoader.classList.remove('active');
+            }
+        }
+
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function hideError() {
+            errorBox.style.display = 'none';
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
